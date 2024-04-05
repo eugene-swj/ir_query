@@ -1,14 +1,85 @@
 import React, { useState } from 'react';
-import logo from './logo.svg';
+// import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
 import './App.css';
 
 function App() {
 
+  const base_url = 'http://localhost:8983/solr/steamreviews/select';
+  // const navigate = useNavigate();
+
   const [show, setShow] = useState(false);
-  const showQuery = () => {
-    
+  const [showParam, setShowParam] = useState(false);
+  const [useParam, setUseParam] = useState(false);
+  
+  //Query Responses
+  const [numFound, setNumFound] = useState(null);
+  const [gameExist, setGameExist] = useState(null);
+  const [queryTime, setQueryTime] = useState(null);
+  const [result, setResult] = useState([]);
+  const [gameInfo, setGameInfo] = useState();
+
+  //User Query Field
+  const [gamequery, setGameQuery] = useState(""); //Game query
+  const [paramquery, setParamQuery] = useState("");
+
+  const SolrQuery = async () => {
+    if (gamequery !== "") //if query is empty
+    {
+      setShow(false);
+      //Process query string
+      // setGameQuery(gamequery.replace(/ AND /i,"").replace(/ OR /i,""));
+      // setParamQuery(paramquery.replace(/ AND /i,"").replace(/ OR /i,""));
+
+      getGameName(); //query game
+
+      setShow(true);
+      // navigate(`/query?${gamequery}`);
+    }
+    else {
+      alert("Please enter a game in the search bar.")
+    }
   } 
-  const game_id = '1811260';
+
+  const getGameName = async () => {
+    const url = base_url + '?q=game_name:'+ gamequery +'&fl=game_id,game_name&rows=1'
+    const res = await axios.get(url);
+    const data = res.data;
+    setGameExist(data.response.docs.length);
+    setQueryTime(data.responseHeader.QTime);
+    console.log(data.response.docs);
+    setGameInfo(data.response.docs);
+
+    
+    if(gameExist !== 0) {
+      let url = base_url + '?q=game_name:'+ gamequery;
+      
+      if(useParam) {
+        url = url+ '&fq=document:' + paramquery;
+      }
+
+      url = url + '&indent=true&rows=10';
+
+      const res = await axios.get(url);
+      const data = res.data;
+      console.log(data);
+      console.log(data.response.docs);
+      setNumFound(data.response.numFound);
+      setQueryTime(data.responseHeader.QTime);
+      setResult(data.response.docs);
+      
+    }
+    else{
+      setResult([]);
+    }
+  }
+
+  const checkKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      SolrQuery();
+    }
+  }
   return (
     <div class=" bg-gradient-to-r from-[#00ADEE] to-black min-h-screen w-screen flex flex-col items-center ">
       {/* Web Title */}
@@ -18,22 +89,62 @@ function App() {
       </div>
 
       {/* Top */}
-      <div class="flex flex-col w-full h-24 items-center">
+      <div class="flex flex-col w-full items-center">
         {/* Search bar */}
-        <form class="flex flex-row gap-3 mt-10">
-          <div class="flex">
-            <input type="text" placeholder="Search for your game"
-              class="w-full md:w-80 px-3 h-10 rounded-l-full border-2 bg-transparent text-white font-semibold placeholder-white border-sky-500 focus:outline-none focus:" />
-
-            <button onClick={() => setShow(!show)} type="button" class="bg-sky-500 hover:bg-sky-800 text-white rounded-r-full px-2 md:px-3 py-0 md:py-1">Search</button>
+        <form class="flex flex-col" autoComplete='off' onKeyDown={(e) => checkKeyDown(e)}>
+          <div class="flex flex-row gap-3 mt-10 z-20">
+            <div class="flex">
+              <input id="game_query" type="text" placeholder="Search for your game" onChange={(e) => setGameQuery(e.target.value)}
+                class="w-full md:w-80 px-3 h-10 rounded-l-full border-2 bg-transparent text-white font-semibold placeholder-white border-sky-500 focus:outline-none focus:" />
+              
+              <button onClick={() => SolrQuery()} type="button" class="bg-sky-500 hover:bg-sky-800 text-white rounded-r-full px-2 md:px-3 py-0 md:py-1">Search</button>
+            </div>
+            <select id="filterType"
+              class="md:w-30 h-10 border-2 border-sky-500 focus:outline-none focus:border-sky-500 text-sky-500 rounded-lg px-2 md:px-3 py-0 md:py-1 tracking-wider">
+              <option value="All" selected="">All</option>
+              <option value="Filter1">Positive</option>
+              <option value="Filter2">Negative</option>
+              <option value="Filter3">Neutral</option>
+            </select>
+            <div id='toggleParam' class={"content-end cursor-pointer transistion-all duration-100 ease-in-out " + (showParam ? ' translate-y-14':'translate-y-0')} onClick={()=>setShowParam(!showParam)}>
+              <svg id="down" class={"h-8 w-8 text-sky-300 " + (showParam ? 'hidden':'')}  width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">  <path stroke="none" d="M0 0h24v24H0z"/>  <line x1="12" y1="5" x2="12" y2="19" />  <line x1="18" y1="13" x2="12" y2="19" />  <line x1="6" y1="13" x2="12" y2="19" /></svg>
+              <svg id="up"   class={"h-8 w-8 text-sky-300 " + (showParam ? '':'hidden')}  width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">  <path stroke="none" d="M0 0h24v24H0z"/>  <line x1="12" y1="5" x2="12" y2="19" />  <line x1="18" y1="11" x2="12" y2="5" />  <line x1="6" y1="11" x2="12" y2="5" /></svg>
+            
+            </div>
           </div>
-          <select id="filterType"
-            class="md:w-30 h-10 border-2 border-sky-500 focus:outline-none focus:border-sky-500 text-sky-500 rounded-lg px-2 md:px-3 py-0 md:py-1 tracking-wider">
-            <option value="All" selected="">All</option>
-            <option value="Filter1">Positive</option>
-            <option value="Filter2">Negative</option>
-            <option value="Filter3">Neutral</option>
-          </select>
+          {showParam ? 
+          <div id="additional_param" class="flex flex-row mt-5 justify-between">
+            <div class="flex items-center">
+              <input id="game_query" type="text" placeholder="Search for review" onChange={(e) => setParamQuery(e.target.value)}
+                    class="w-full md:w-80 px-3 h-10 rounded-full border-2 bg-transparent text-white font-semibold placeholder-white border-sky-500 focus:outline-none focus:" />
+              
+              <div class="inline-flex items-center">
+                <label class="relative flex items-center p-3 rounded-full cursor-pointer" htmlFor="checkbox">
+                  <input type="checkbox"
+                    class="before:content[''] peer relative h-5 w-5 cursor-pointer appearance-none rounded-md border border-blue-gray-200 transition-all before:absolute before:top-2/4 before:left-2/4 before:block before:h-12 before:w-12 before:-translate-y-2/4 before:-translate-x-2/4 before:rounded-full before:bg-blue-gray-500 before:opacity-0 before:transition-opacity checked:border-gray-900 checked:bg-gray-900 checked:before:bg-gray-900 hover:before:opacity-10"
+                    id="checkbox" onChange={() => setUseParam(!useParam)}/>
+                  <span
+                    class="absolute text-white transition-opacity opacity-0 pointer-events-none top-2/4 left-2/4 -translate-y-2/4 -translate-x-2/4 peer-checked:opacity-100">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor"
+                      stroke="currentColor" stroke-width="1">
+                      <path fill-rule="evenodd"
+                        d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                        clip-rule="evenodd"></path>
+                    </svg>
+                  </span>
+                </label>
+              </div>
+              
+            </div>
+             
+            {/* <div id="untoggleParam" class="cursor-pointer" onClick={()=>setShowParam(!showParam)}>
+              <svg class="h-8 w-8 text-sky-300"  width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">  <path stroke="none" d="M0 0h24v24H0z"/>  <line x1="12" y1="5" x2="12" y2="19" />  <line x1="18" y1="11" x2="12" y2="5" />  <line x1="6" y1="11" x2="12" y2="5" /></svg>
+            </div> */}
+            
+          </div>
+          
+          :<></>}
+          
         </form>
 
         {/* Divider */}
@@ -45,21 +156,29 @@ function App() {
       {show ? ( <>
 
       {/* Game Info [Start] */}
-      <div class="flex h-24 justify-center items-center mt-6 w-fit  rounded-md cursor-pointer transition hover:scale-110"
-       onClick={()=>window.open("https://store.steampowered.com/app/"+game_id,"_blank")}>
-        
-        {/* Game Image */}
-        <img class="h-24 fill-current ml-4 mr-10" alt="box_art.jpg" src={'https://steamcdn-a.akamaihd.net/steam/apps/'+ game_id + '/library_600x900_2x.jpg'}/>
-        
-        {/* Game Title */}
-        <h2 class="text-3xl text-gray-100 mr-4 font-semibold">EA SPORTS FIFA 23</h2>
+      {gameInfo?.map((game) => { //Display queried game box art and title
+        return (
+        <div class="flex h-28 justify-center mt-10 items-center w-fit rounded-md cursor-pointer transition hover:scale-110" onClick={()=>window.open('https://store.steampowered.com/app/'+ game.game_id +'_blank')}>
 
-      </div>
+          {/* Game Image */}
+          <img class="h-28 fill-current ml-4 mr-10" alt="box_art.jpg" src={'https://steamcdn-a.akamaihd.net/steam/apps/'+ game.game_id + '/library_600x900_2x.jpg'}/>
+
+          {/* Game Title */}
+          <h2 class="text-3xl text-gray-100 mr-4 font-semibold">{game.game_name}</h2>
+
+        </div>
+      )
+      })}
       {/* Game Info [End] */}
+      
+      <div class="w-full text-center text-white font-medium mt-6">{numFound} results in {queryTime} milliseconds</div>
+      <div class="w-full text-center text-white font-medium mt-2">{"( Showing 10 rows )"}</div>
       {/* Game Reviews [Start]*/}
-      <section class="h-auto flex flex-col flex-none antialiased text-gray-600 p-4 w-2xl mt-5 mb-5 overscroll-none overflow-y-auto">
+      <section class="h-auto flex flex-col flex-none antialiased text-gray-600 p-4 w-2xl mb-5 overscroll-none overflow-y-auto">
         <div class="">
-          <div class="max-w-2xl mx-auto bg-gradient-to-r from-[#1e7a9b] to-[#323d54] shadow-lg rounded-lg mb-5">
+        {result?.map((docs) => {
+          return (
+          <div key={docs.id} class={docs.username === '' ? "hidden":"max-w-2xl mx-auto bg-gradient-to-r from-[#1e7a9b] to-[#323d54] shadow-lg rounded-lg mb-5"}>
             <div class="px-6 py-5">
               <div class="flex items-start">
                 {/* Card content [Start] */}
@@ -67,19 +186,19 @@ function App() {
                   {/* Card header [Start]*/}
                   <div class="w-full sm:flex justify-between items-center mb-3">
                     {/* Username and Profile URL [Start]*/}
-                    <div class="flex items-center has-tooltip rounded p-1 cursor-pointer" onClick={()=> window.open("https://steamcommunity.com/profiles/76561198077851392/","_blank")}>
+                    <div class="flex items-center has-tooltip rounded p-1 cursor-pointer" onClick={()=> window.open(docs.profileURL,"_blank")}>
                       <span class="tooltip rounded shadow-lg p-1 text-gray-100 bg-[#323d54] -mt-20 ml-10">View User Profile</span>
                       {/* User Avatar */}
-                      <img class=" h-10 w-10 rounded-full fill-current flex-shrink-0 mr-5" src="https://avatars.steamstatic.com/a1dd13ff19f3823ad4cbedd37ee6a6640b872df0_full.jpg"/>
+                      <img class=" h-10 w-10 rounded-full fill-current flex-shrink-0 mr-5" alt="avatar.jpg" src={docs.avatarURL}/>
                       
-                      <h2 class="text-2xl leading-snug font-extrabold text-gray-50 truncate mb-1 sm:mb-0 cursor-pointer">WOSML</h2>
+                      <h2 class="text-2xl leading-snug font-extrabold text-gray-50 truncate mb-1 sm:mb-0 cursor-pointer">{docs.username}</h2>
                       
                     </div>
                     {/* Username and Profile URL [End] */}
                     {/* Playtime at review */}
                     <div class="flex-shrink-0 flex items-center sm:ml-2 text-gray-100 space-x-2">
                       <div class="flex items-center text-left text-sm font-medium ">Playtime At Review:</div>
-                      <div>450 hours</div>
+                      <div>{docs.playtime_at_review} hours</div>
                     </div>
                   </div>
                   {/* Card header [End] */}
@@ -88,12 +207,14 @@ function App() {
                   <div class="flex items-end justify-between whitespace-normal ml-14">
                     {/* Paragraph */}
                     <div id="content" class="max-w-md max-h-28 text-indigo-100 overflow-y-auto">
-                      <p class="mb-2">Lorem ipsum dolor sit amet, consecte adipiscing elit sed do eiusmod tempor incididunt ut labore et dolore Lorem ipsum dolor sit amet, consecte adipiscing elit sed do eiusmod tempor incididunt ut labore et dolore Lorem ipsum dolor sit amet, consecte adipiscing elit sed do eiusmod tempor incididunt ut labore et dolore Lorem ipsum dolor sit amet, consecte adipiscing elit sed do eiusmod tempor incididunt ut labore et dolore Lorem ipsum dolor sit amet, consecte adipiscing elit sed do eiusmod tempor incididunt ut labore et dolore Lorem ipsum dolor sit amet, consecte adipiscing elit sed do eiusmod tempor incididunt ut labore et dolore.</p>
+                      {/* <p class="mb-2">Lorem ipsum dolor sit amet, consecte adipiscing elit sed do eiusmod tempor incididunt ut labore et dolore Lorem ipsum dolor sit amet, consecte adipiscing elit sed do eiusmod tempor incididunt ut labore et dolore Lorem ipsum dolor sit amet, consecte adipiscing elit sed do eiusmod tempor incididunt ut labore et dolore Lorem ipsum dolor sit amet, consecte adipiscing elit sed do eiusmod tempor incididunt ut labore et dolore Lorem ipsum dolor sit amet, consecte adipiscing elit sed do eiusmod tempor incididunt ut labore et dolore Lorem ipsum dolor sit amet, consecte adipiscing elit sed do eiusmod tempor incididunt ut labore et dolore.</p> */}
+                      <p class="mb-2 whitespace-pre-wrap">{docs.document}</p>
                       {/* <div class="bottom-0 left-0 right-0 z-0 h-8 bg-gradient-to-b from-white from-5% to-black"></div> */}
                     </div>
                     {/* <!-- More link --> */}
                     <a class="flex-shrink-0 flex items-center justify-center text-indigo-600 w-10 h-10 rounded-full bg-gradient-to-b from-indigo-50 to-indigo-100 hover:from-white hover:to-indigo-50 focus:outline-none focus-visible:from-white focus-visible:to-white transition duration-150 ml-2" href="#0">
-                      <span class="block font-bold"><span class="sr-only">Read more</span></span>
+                      {/* <span class="block font-bold"><span class="sr-only">Read more</span></span> */}
+                    <svg class="h-8 w-8 text-cyan-500"  viewBox="0 0 24 24"  fill="none"  stroke="currentColor"  stroke-width="2"  stroke-linecap="round"  stroke-linejoin="round">  <path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3" /></svg>
                     </a>
                   </div>
                   {/* Card body [End] */}
@@ -102,7 +223,10 @@ function App() {
               </div>
             </div>
           </div>
-          
+
+          ); 
+        })}
+                    
         </div>
       </section>
       {/* Game reviews [End] */}
