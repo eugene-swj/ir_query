@@ -6,13 +6,16 @@ import './App.css';
 function App() {
 
   const base_url = 'http://localhost:8983/solr/steamreviews/select';
+  const facet_url = '&facet=true&facet.field=label&facet.range=playtime_at_review&f.playtime_at_review.facet.range.start=0&f.playtime_at_review.facet.range.end=450000&f.playtime_at_review.facet.range.gap=100000';
   const end_url = '&indent=true&rows='
   const navigate = useNavigate();
 
+  //Display states
   const [show, setShow] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [showParam, setShowParam] = useState(false);
-  const [useParam, setUseParam] = useState(false);
   const [prevURL, setPrevURL] = useState("");
+  const [showScroll, setShowScroll] = useState(false);
   
   //Query Responses
   const [numFound, setNumFound] = useState(null);
@@ -20,88 +23,171 @@ function App() {
   const [queryTime, setQueryTime] = useState(null);
   const [result, setResult] = useState([]);
   const [gameInfo, setGameInfo] = useState();
-  // const [facetFields, setFacetFields] = useState();
+  const [displayRows, setDisplayRows] = useState("10");
 
   //Facet Fields
   const [positivelabel, setPositiveLabel] = useState("");
   const [negativelabel, setNegativeLabel] = useState("");
   const [neutrallabel , setNeutralLabel] = useState("");
+  const [zeroRange, setZeroRange] = useState("");
+  const [oneRange, setOneRange] = useState("");
+  const [twoRange, setTwoRange] = useState("");
+  const [threeRange, setThreeRange] = useState("");
+  const [fourRange, setFourRange] = useState("");
   
   //User Query Fields
   const [gamequery, setGameQuery] = useState(""); //Game query
   const [paramquery, setParamQuery] = useState("");
-  // const [filterpositive, setFilterPositive] = useState(false);
-  // const [filternegative, setFilterNegative] = useState(false);
-  // const [filterneutral, setFilterNeutral] = useState(false);
   const [rows, setRows] = useState("10");
 
+  //Prevent refresh when enter
   const checkKeyDown = (e) => {
     if (e.key === 'Enter') {
       e.preventDefault();
       SolrQuery();
     }
   }
+  //Scroll to top button
+  window.addEventListener('scroll', () => {
+    if (document.documentElement.scrollTop > 100) {
+      setShowScroll(true);
+    } else {
+      setShowScroll(false);
+    }
+  });
+  
+  const scrollToTop = () => {
+    window.scrollTo({
+      top: 0,
+      behavior: 'smooth'
+  });
+  }
+
+  //Facet filter
   const toggleFilter = async () => {
     const pos_checkbox = document.getElementById('positive');
     const neg_checkbox = document.getElementById('negative');
     const neu_checkbox = document.getElementById('neutral');
 
-    const checkboxstatus = {
-      pos_checkbox:{
-        checked: pos_checkbox.checked
-      },
-      neg_checkbox:{
-        checked: neg_checkbox.checked
-      },
-      neu_checkbox:{
-        checked: neu_checkbox.checked
-      }
-    };
-    // console.log(checkboxstatus);
-
     let filterpositive = pos_checkbox.checked;
     let filternegative = neg_checkbox.checked;
     let filterneutral = neu_checkbox.checked;
 
-    let filterstr = ''; //eg. &fq=label(positive%20OR%20negative)
+    //Check status of filter checkboxes
+    let filter_label_str = ''; //eg. &fq=label(positive%20OR%20negative)
     if ((filterpositive&&filternegative&&filterneutral)||(!filterpositive&&!filternegative&&!filterneutral)) //All or none selected
-    {filterstr = '';}
+    {filter_label_str = '';}
     if (filterpositive && !filternegative && !filterneutral) //Positive selected
-    {filterstr = '&fq=label:(positive)';}
+    {filter_label_str = '&fq=label:(positive)';}
     if (!filterpositive && filternegative && !filterneutral) //Negative selected
-    {filterstr = '&fq=label:(negative)';}
+    {filter_label_str = '&fq=label:(negative)';}
     if (!filterpositive && !filternegative && filterneutral) //Neutral selected
-    {filterstr = '&fq=label:(neutral)';}
+    {filter_label_str = '&fq=label:(neutral)';}
     if (filterpositive && filternegative && !filterneutral) //Positive and negative selected
-    {filterstr = '&fq=label:(positive%20OR%20negative)';}
+    {filter_label_str = '&fq=label:(positive%20OR%20negative)';}
     if (filterpositive && !filternegative && filterneutral) //Positive and neutral selected
-    {filterstr = '&fq=label:(positive%20OR%20neutral)';}
+    {filter_label_str = '&fq=label:(positive%20OR%20neutral)';}
     if (!filterpositive && filternegative && filterneutral) //Negative and neutral selected
-    {filterstr = '&fq=label:(neutral%20OR%20negative)';}
+    {filter_label_str = '&fq=label:(neutral%20OR%20negative)';}
 
-    // console.log(filterstr);
-    let url = prevURL + filterstr + end_url + rows;
-    const res = await axios.get(url);
-    const data = res.data;
-      
-    // console.log(data);
-    setNumFound(data.response.numFound);
-    setQueryTime(data.responseHeader.QTime);
-    setResult(data.response.docs);
-      
+    const zero_checkbox = document.getElementById('0to1');
+    const one_checkbox = document.getElementById('1to2');
+    const two_checkbox = document.getElementById('2to3');
+    const three_checkbox = document.getElementById('3to4');
+    const four_checkbox = document.getElementById('4to5');
+    
+    let filterzero = zero_checkbox.checked;
+    let filterone = one_checkbox.checked;
+    let filtertwo = two_checkbox.checked;
+    let filterthree = three_checkbox.checked;
+    let filterfour = four_checkbox.checked;
+
+    let filter_range_str = ''
+    if ((filterzero && filterone && filtertwo && filterthree && filterfour) || (!filterzero && !filterone && !filtertwo && !filterthree && !filterfour))
+    {filter_range_str = '';}
+    if (filterzero && !filterone && !filtertwo && !filterthree && !filterfour) //0 to 100,000
+    {filter_range_str = '&fq=playtime_at_review:[0%20TO%20100000]';}
+    if (filterzero && filterone && !filtertwo && !filterthree && !filterfour) //0 to 200,000
+    {filter_range_str = '&fq=playtime_at_review:[0%20TO%20200000]';}
+    if (filterzero && filterone && filtertwo && !filterthree && !filterfour) //0 to 300,000
+    {filter_range_str = '&fq=playtime_at_review:[0%20TO%20300000]';}
+    if (filterzero && filterone && filtertwo && filterthree && !filterfour) //0 to 400,000
+    {filter_range_str = '&fq=playtime_at_review:[0%20TO%20400000]';}
+    if (filterzero && !filterone && filtertwo && !filterthree && !filterfour) //0 to 100,000 OR 200,000 to 300,000
+    {filter_range_str = '&fq=playtime_at_review:([0%20TO%20100000]%20OR%20[200000%20TO%20300000])';}
+    if (filterzero && !filterone && filtertwo && filterthree && !filterfour) //0 to 100,000 OR 200,000 to 400,000
+    {filter_range_str = '&fq=playtime_at_review:([0%20TO%20100000]%20OR%20[200000%20TO%20400000])';}
+    if (filterzero && !filterone && filtertwo && filterthree && filterfour) //0 to 100,000 OR 200,000 to 500,000
+    {filter_range_str = '&fq=playtime_at_review:([0%20TO%20100000]%20OR%20[200000%20TO%20500000]';}
+    if (filterzero && !filterone && !filtertwo && filterthree && !filterfour) //0 to 100,000 OR 300,000 to 400,000
+    {filter_range_str = '&fq=playtime_at_review:([0%20TO%20100000]%20OR%20[300000%20TO%20400000])';}
+    if (filterzero && !filterone && !filtertwo && filterthree && filterfour) //0 to 100,000 OR 300,000 to 500,000
+    {filter_range_str = '&fq=playtime_at_review:([0%20TO%20100000]%20OR%20[300000%20TO%20500000])';}
+    if (filterzero && !filterone && !filtertwo && !filterthree && filterfour) //0 to 100,000 OR 400,000 to 500,000
+    {filter_range_str = '&fq=playtime_at_review:([0%20TO%20100000]%20OR%20[400000%20TO%20500000])';}
+
+    if (!filterzero && filterone && !filtertwo && !filterthree && !filterfour) //100,000 to 200,000
+    {filter_range_str = '&fq=playtime_at_review:[100000%20TO%20200000]';}
+    if (!filterzero && filterone && filtertwo && !filterthree && !filterfour) //100,000 to 300,000
+    {filter_range_str = '&fq=playtime_at_review:[100000%20TO%20300000]';}
+    if (!filterzero && filterone && filtertwo && filterthree && !filterfour) //100,000 to 400,000
+    {filter_range_str = '&fq=playtime_at_review:[100000%20TO%20400000]';}
+    if (!filterzero && filterone && filtertwo && filterthree && filterfour) //100,000 to 500,000
+    {filter_range_str = '&fq=playtime_at_review:[100000%20TO%20500000]';}
+    if (!filterzero && filterone && !filtertwo && filterthree && !filterfour) //100,000 to 200,000 or 300,000 to 400,000
+    {filter_range_str = '&fq=playtime_at_review:([100000%20TO%20200000]%20OR%20[300000%20TO%20400000])';}
+    if (!filterzero && filterone && !filtertwo && filterthree && filterfour) //100,000 to 200,000 or 300,000 to 500,000
+    {filter_range_str = '&fq=playtime_at_review:([100000%20TO%20200000]%20OR%20[300000%20TO%20500000])';}
+    if (!filterzero && filterone && !filtertwo && !filterthree && filterfour) //100,000 to 200,000 or 400,000 to 500,000
+    {filter_range_str = '&fq=playtime_at_review:([100000%20TO%20200000]%20OR%20[400000%20TO%20500000])';}
+
+    if (!filterzero && !filterone && filtertwo && !filterthree && !filterfour) //200,000 to 300,000
+    {filter_range_str = '&fq=playtime_at_review:[200000%20TO%20300000]';}
+    if (!filterzero && !filterone && filtertwo && filterthree && !filterfour) //200,000 to 400,000
+    {filter_range_str = '&fq=playtime_at_review:[200000%20TO%20300000]';}
+    if (!filterzero && !filterone && filtertwo && filterthree && filterfour) //200,000 to 500,000
+    {filter_range_str = '&fq=playtime_at_review:[200000%20TO%20300000]';}
+    if (!filterzero && !filterone && filtertwo && !filterthree && filterfour) //200,000 to 300,000 or 400,000 to 500,000
+    {filter_range_str = '&fq=playtime_at_review:([200000%20TO%20300000]%20OR%20[400000%20TO%20500000])';}
+
+
+    if (!filterzero && !filterone && !filtertwo && filterthree && !filterfour) //300,000 to 400,000
+    {filter_range_str = '&fq=playtime_at_review:[300000%20TO%20400000]';}
+    if (!filterzero && !filterone && !filtertwo && filterthree && filterfour) //300,000 to 500,000
+    {filter_range_str = '&fq=playtime_at_review:[300000%20TO%20500000]';}
+
+    if (!filterzero && !filterone && !filtertwo && !filterthree && filterfour) //400,000 to 500,000
+    {filter_range_str = '&fq=playtime_at_review:[400000%20TO%20500000]';}
+
+
+    // console.log(filter_range_str);
+    try {
+      let url = prevURL + filter_label_str +filter_range_str + end_url + rows;
+      const res = await axios.get(url);
+      const data = res.data;
+        
+      // console.log(data);
+      setNumFound(data.response.numFound);
+      setDisplayRows(rows);
+      setQueryTime(data.responseHeader.QTime);
+      setResult(data.response.docs);
+    } catch {
+      alert("Somthing went wrong. Please try again.");
+    }
+   
   }
 
-  const processFacetFields = (arr) => {
+  const processLabelFacetFields = (arr) => {
     if (!Array.isArray(arr) || arr.length === 0) {
       return null; // Return null if the input is not an array or is empty
     }
-  
+
     let result = null;
   
     for (let i = 0; i < arr.length; i += 2) {
       const key = arr[i];
       const value = arr[i + 1];
-      console.log(key + ':' + value)
+      // console.log(key + ':' + value)
       if (result === null) {
         result = {};
       }
@@ -110,17 +196,40 @@ function App() {
     setPositiveLabel(result['positive']);
     setNegativeLabel(result['negative']);
     setNeutralLabel(result['neutral']);
+  }
+
+  const processRangeFacetFields = (arr) => {
+    if (!Array.isArray(arr) || arr.length === 0) {
+      return null; // Return null if the input is not an array or is empty
+    }
+
+    let result = null;
+  
+    for (let i = 0; i < arr.length; i += 2) {
+      const key = arr[i];
+      const value = arr[i + 1];
+      // console.log(key + ':' + value)
+      if (result === null) {
+        result = {};
+      }
+      result[key] = value;
+    }
+    setZeroRange(result['0']);
+    setOneRange(result['100000']);
+    setTwoRange(result['200000']);
+    setThreeRange(result['300000']);
+    setFourRange(result['400000']);
 
   }
 
   const SolrQuery = async () => {
     if (gamequery !== "") //if query is empty
     {
+      setLoading(true);
       setShow(false);
 
       getQueryResult(); //query game
-
-      setShow(true);
+      
       navigate('/');
       // navigate(`/query?${gamequery}`);
     }
@@ -131,42 +240,52 @@ function App() {
 
   const getQueryResult = async () => {
     const url = base_url + '?q=game_name:'+ gamequery +'&fl=game_id,game_name&rows=1'
-    const res = await axios.get(url);
-    const data = res.data;
-    setGameExist(data.response.docs.length);
-    setQueryTime(data.responseHeader.QTime);
-    // console.log(data.response.docs);
-    setGameInfo(data.response.docs);
-
-    
-    if(gameExist !== 0) {
-      let url = base_url + '?q=game_name:'+ gamequery;
-      
-      if(useParam) {
-        url = url+ '%20AND%20document:' + paramquery;
-      }
-      url = url + '&facet=true&facet.field=label';
-      setPrevURL(url);
-
-      url = url + end_url + rows;
-      console.log(url);
-
+    try {
       const res = await axios.get(url);
       const data = res.data;
-      
-      console.log(data);
-      // console.log(data.facet_counts.facet_fields.label)
-      processFacetFields(data.facet_counts.facet_fields.label)
-      // console.log(data.response.docs);
-      
-      setNumFound(data.response.numFound);
+      setGameExist(data.response.docs.length);
       setQueryTime(data.responseHeader.QTime);
-      setResult(data.response.docs);
+      // console.log(data.response.docs);
+      setGameInfo(data.response.docs);
+  
       
+      if(gameExist !== 0) {
+        let url = base_url + '?q=game_name:'+ gamequery;
+        
+        if(paramquery !== "") {
+          url = url+ '%20AND%20document:' + paramquery;
+        }
+        setPrevURL(url);
+        url = url + facet_url + end_url + rows;
+
+        // console.log(url);  
+        const res = await axios.get(url);
+        const data = res.data;
+        
+        console.log(data);
+        processRangeFacetFields(data.facet_counts.facet_ranges.playtime_at_review.counts);
+        processLabelFacetFields(data.facet_counts.facet_fields.label);
+        // console.log(data.response.docs);
+        
+        setNumFound(data.response.numFound);
+        setDisplayRows(rows);
+        setQueryTime(data.responseHeader.QTime);
+        setResult(data.response.docs);
+        
+        setLoading(false);
+        setShow(true);
+        
+      }
+      else{
+        setResult([]);
+        setLoading(false);
+        setShow(true);
+      }
+    } catch {
+        setShow(false);
+        alert("Something went wrong. Please try again later.");
     }
-    else{
-      setResult([]);
-    }
+    
   }
 
   return (
@@ -181,52 +300,37 @@ function App() {
       <div class="flex flex-col w-full items-center">
         {/* Search bar */}
         <form class="flex flex-col" autoComplete='off' onKeyDown={(e) => checkKeyDown(e)}>
-          <div class="flex flex-row w-full gap-3 justify-around mt-10 z-20">
+          <div class="flex flex-row w-full justify-between items-center mt-10 z-20">
+            <div class="w-56"></div>
             <div class="flex">
               <input id="game_query" type="text" placeholder="Search for your game" onChange={(e) => setGameQuery(e.target.value)}
-                class="w-full md:w-80 px-3 h-10 rounded-l-full border-2 bg-transparent text-white font-semibold placeholder-white border-sky-500 focus:outline-none focus:" />
+                class="w-full md:w-80 text-lg px-3 h-10 rounded-l-full border-2 bg-transparent text-white font-semibold placeholder-white border-sky-500 focus:outline-none focus:" />
               
-              <button onClick={() => SolrQuery()} type="button" class="bg-sky-500 hover:bg-sky-800 text-white rounded-r-full px-2 md:px-3 py-0 md:py-1">Search</button>
+              <button onClick={() => SolrQuery()} type="button" class="bg-sky-500 hover:bg-sky-800 text-lg text-white rounded-r-full px-2 md:px-3 py-0 md:py-1">Search</button>
             </div>
-
-            <button type="button" id='toggleParam' class={"flex ml-10 rounded-lg text-center items-center text-sm font-medium text-white cursor-pointer transistion-all duration-100 ease-in-out " + (showParam ? 'translate-y-16':'translate-y-0')} onClick={()=>setShowParam(!showParam)}>
-              Search more
-              <svg id="down" class={"h-8 w-8 text-sky-300 " + (showParam ? 'hidden':'')}  width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">  <path stroke="none" d="M0 0h24v24H0z"/>  <line x1="12" y1="5" x2="12" y2="19" />  <line x1="18" y1="13" x2="12" y2="19" />  <line x1="6" y1="13" x2="12" y2="19" /></svg>
-              <svg id="up"   class={"h-8 w-8 text-sky-300 " + (showParam ? '':'hidden')}  width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">  <path stroke="none" d="M0 0h24v24H0z"/>  <line x1="12" y1="5" x2="12" y2="19" />  <line x1="18" y1="11" x2="12" y2="5" />  <line x1="6" y1="11" x2="12" y2="5" /></svg>
-            
-            </button>
+            <div class="w-56 flex justify-end">
+              <button type="button" id='toggleParam' class={"flex rounded-lg text-center items-center text-lg font-medium text-white cursor-pointer transistion-all duration-100 ease-in-out " + (showParam ? 'translate-y-[60px]':'translate-y-0')} onClick={()=>setShowParam(!showParam)}>
+                Search more
+                <svg id="down" class={"h-8 w-8 text-sky-300 " + (showParam ? 'hidden':'')}  width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">  <path stroke="none" d="M0 0h24v24H0z"/>  <line x1="12" y1="5" x2="12" y2="19" />  <line x1="18" y1="13" x2="12" y2="19" />  <line x1="6" y1="13" x2="12" y2="19" /></svg>
+                <svg id="up"   class={"h-8 w-8 text-sky-300 " + (showParam ? '':'hidden')}  width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">  <path stroke="none" d="M0 0h24v24H0z"/>  <line x1="12" y1="5" x2="12" y2="19" />  <line x1="18" y1="11" x2="12" y2="5" />  <line x1="6" y1="11" x2="12" y2="5" /></svg>
+              </button>
+            </div>
           </div>
           {showParam ? 
-          <div id="additional_param" class="flex flex-row mt-5 justify-between">
+          <div id="additional_param" class="flex flex-row mt-5 justify-center">
             <div class="flex items-center">
               <input id="game_query" type="text" placeholder="Search within review" onChange={(e) => setParamQuery(e.target.value)}
-                    class="w-full md:w-70 px-3 h-10 rounded-full border-2 bg-transparent text-white font-semibold placeholder-white border-sky-500 focus:outline-none focus:" />
+                    class="w-full md:w-70 px-3 h-10 mr-6 rounded-full border-2 bg-transparent text-lg text-white font-semibold placeholder-white border-sky-500 focus:outline-none focus:" />
               
-              <div id="enableSearch" class="inline-flex items-center">
-                <label class="relative flex items-center p-3 rounded-full cursor-pointer" htmlFor="checkbox">
-                  <input type="checkbox"
-                    class="before:content[''] peer relative h-5 w-5 cursor-pointer appearance-none rounded-md border border-blue-gray-200 transition-all before:absolute before:top-2/4 before:left-2/4 before:block before:h-12 before:w-12 before:-translate-y-2/4 before:-translate-x-2/4 before:rounded-full before:bg-blue-gray-500 before:opacity-0 before:transition-opacity checked:border-gray-900 checked:bg-gray-900 checked:before:bg-gray-900 hover:before:opacity-10"
-                    id="checkbox" onChange={() => setUseParam(!useParam)}/>
-                  <span
-                    class="absolute text-white transition-opacity opacity-0 pointer-events-none top-2/4 left-2/4 -translate-y-2/4 -translate-x-2/4 peer-checked:opacity-100">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor"
-                      stroke="currentColor" stroke-width="1">
-                      <path fill-rule="evenodd"
-                        d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                        clip-rule="evenodd"></path>
-                    </svg>
-                  </span>
-                </label>
-              </div>
-              <div class="flex items-center">
-                <p>Display</p>
-                <select id="row" onChange={(e) => setRows(e.target.value)} class="md:w-30 h-10 border-2 border-sky-500 focus:outline-none focus:border-sky-500 text-sky-500 rounded-lg px-2 md:px-3 py-0 md:py-1 tracking-wider">
-                  <option value="10">10</option>
-                  <option value="20">20</option>
-                  <option value="30">30</option>
-                  <option value="40">40</option>
+              <div class="flex items-center text-lg">
+                <p class="font-medium text-white pr-2">Display</p>
+                <select id="row" onChange={(e) => setRows(e.target.value)} class="h-10 bg-transparent justify-center overflow-visible focus:outline-none focus:border-sky-500 text-white rounded-lg">
+                  <option class="text-black" value="10">10</option>
+                  <option class="text-black" value="20">20</option>
+                  <option class="text-black" value="30">30</option>
+                  <option class="text-black" value="40">40</option>
                 </select>
-                <p>rows</p>
+                <p class="font-medium text-white pl-2">rows</p>
               </div>
               
             </div>
@@ -240,19 +344,19 @@ function App() {
           <span class="flex-grow bg-gray-200 opacity-[.65] rounded h-1"></span>
         </h3>
       </div>
-
+      {loading ? (<div class="text-white text-lg mt-5">Loading Results...</div>):<></>}
       {show ? ( <>
 
       <div id="content" class="flex flex-row justify-between w-full">
             
-        <div id="left" class="z-10 w-56 h-fit p-3 bg-white rounded-lg shadow dark:bg-gray-700">
-          <h6 class="mb-3 text-sm font-medium text-gray-900 dark:text-white border-b-2 border-gray-200 border-opacity-65">
+        <div id="left" class="z-10 w-56 mt-10 h-fit p-3 bg-white rounded-lg shadow dark:bg-gray-700 ">
+          <h6 class="mb-3 text-sm font-medium text-gray-900 dark:text-white border-b-2 border-gray-200 border-opacity-90">
             Filter
           </h6>
-          <ul id="label-filter"class="space-y-2 text-sm mb-2" >
+          <ul id="label-filter"class="space-y-2 text-sm mb-4" >
             <p>Label</p>
             <li class="flex items-center"> {/*onChange={() => setFilterPositive(!filterpositive)}*/}
-              <input id="positive" type="checkbox" value="positive" onClick={() => toggleFilter()} defaultChecked
+              <input id="positive" type="checkbox" value="positive" onClick={() => toggleFilter()} defaultChecked={false}
                 class="w-4 h-4 bg-gray-100 border-gray-300 rounded text-primary-600 focus:ring-primary-500 dark:focus:ring-primary-600 dark:ring-offset-gray-700 focus:ring-2 dark:bg-gray-600 dark:border-gray-500" />
 
               <label for="positive" class="ml-2 text-sm font-medium text-gray-900 dark:text-gray-100">
@@ -261,7 +365,7 @@ function App() {
             </li>
 
             <li class="flex items-center"> {/* onChange={() => setFilterNegative(!filternegative)} */}
-              <input id="negative" type="checkbox" value="negative" onClick={() => toggleFilter()} defaultChecked
+              <input id="negative" type="checkbox" value="negative" onClick={() => toggleFilter()} defaultChecked={false}
                 class="w-4 h-4 bg-gray-100 border-gray-300 rounded text-primary-600 focus:ring-primary-500 dark:focus:ring-primary-600 dark:ring-offset-gray-700 focus:ring-2 dark:bg-gray-600 dark:border-gray-500" />
 
               <label for="negative" class="ml-2 text-sm font-medium text-gray-900 dark:text-gray-100">
@@ -270,7 +374,7 @@ function App() {
             </li>
 
             <li class="flex items-center"> {/*onChange={() => setFilterNeutral(!filterneutral)} */}
-              <input id="neutral" type="checkbox" value="neutral" onClick={() => toggleFilter()} defaultChecked
+              <input id="neutral" type="checkbox" value="neutral" onClick={() => toggleFilter()} defaultChecked={false}
                 class="w-4 h-4 bg-gray-100 border-gray-300 rounded text-primary-600 focus:ring-primary-500 dark:focus:ring-primary-600 dark:ring-offset-gray-700 focus:ring-2 dark:bg-gray-600 dark:border-gray-500" />
 
               <label for="neutral" class="ml-2 text-sm font-medium text-gray-900 dark:text-gray-100">
@@ -281,11 +385,43 @@ function App() {
           <ul class="space-y-2 text-sm">
             <span>{'Playtime (hours)'}</span>
             <li class="flex items-center">
-                <input id="dell" type="checkbox" value=""
+                <input id="0to1" type="checkbox" value="0to1" onClick={() => toggleFilter()} defaultChecked={false}
                   class="w-4 h-4 bg-gray-100 border-gray-300 rounded text-primary-600 focus:ring-primary-500 dark:focus:ring-primary-600 dark:ring-offset-gray-700 focus:ring-2 dark:bg-gray-600 dark:border-gray-500" />
 
-                <label for="dell" class="ml-2 text-sm font-medium text-gray-900 dark:text-gray-100">
-                  Dell (56)
+                <label for="0to1" class="ml-2 text-sm font-medium text-gray-900 dark:text-gray-100">
+                  0 - 100,000 ({zeroRange})
+                </label>
+              </li>
+            <li class="flex items-center">
+                <input id="1to2" type="checkbox" value="1to2" onClick={() => toggleFilter()} defaultChecked={false}
+                  class="w-4 h-4 bg-gray-100 border-gray-300 rounded text-primary-600 focus:ring-primary-500 dark:focus:ring-primary-600 dark:ring-offset-gray-700 focus:ring-2 dark:bg-gray-600 dark:border-gray-500" />
+
+                <label for="1to2" class="ml-2 text-sm font-medium text-gray-900 dark:text-gray-100">
+                  100,000 - 200,000 ({oneRange})
+                </label>
+              </li>
+            <li class="flex items-center">
+                <input id="2to3" type="checkbox" value="2to3" onClick={() => toggleFilter()} defaultChecked={false}
+                  class="w-4 h-4 bg-gray-100 border-gray-300 rounded text-primary-600 focus:ring-primary-500 dark:focus:ring-primary-600 dark:ring-offset-gray-700 focus:ring-2 dark:bg-gray-600 dark:border-gray-500" />
+
+                <label for="2to3" class="ml-2 text-sm font-medium text-gray-900 dark:text-gray-100">
+                  200,000 - 300,000 ({twoRange})
+                </label>
+              </li>
+            <li class="flex items-center">
+                <input id="3to4" type="checkbox" value="3to4" onClick={() => toggleFilter()} defaultChecked={false}
+                  class="w-4 h-4 bg-gray-100 border-gray-300 rounded text-primary-600 focus:ring-primary-500 dark:focus:ring-primary-600 dark:ring-offset-gray-700 focus:ring-2 dark:bg-gray-600 dark:border-gray-500" />
+
+                <label for="3to4" class="ml-2 text-sm font-medium text-gray-900 dark:text-gray-100">
+                  300,000 - 400,000 ({threeRange})
+                </label>
+              </li>
+            <li class="flex items-center">
+                <input id="4to5" type="checkbox" value="4to5" onClick={() => toggleFilter()} defaultChecked={false}
+                  class="w-4 h-4 bg-gray-100 border-gray-300 rounded text-primary-600 focus:ring-primary-500 dark:focus:ring-primary-600 dark:ring-offset-gray-700 focus:ring-2 dark:bg-gray-600 dark:border-gray-500" />
+
+                <label for="4to5" class="ml-2 text-sm font-medium text-gray-900 dark:text-gray-100">
+                  400,000 - 500,000 ({fourRange})
                 </label>
               </li>
           </ul>
@@ -310,7 +446,7 @@ function App() {
               {/* Game Info [End] */}
             
             <div class="w-full text-center text-white font-medium mt-6">{numFound} results in {queryTime} milliseconds</div>
-            <div class="w-full text-center text-white font-medium mt-2">{"( Showing "+ rows +" rows )"}</div>
+            <div class="w-full text-center text-white font-medium mt-2">{"( Showing "+ displayRows +" rows )"}</div>
 
 
           </div>
@@ -354,10 +490,22 @@ function App() {
                           {/* <div class="bottom-0 left-0 right-0 z-0 h-8 bg-gradient-to-b from-white from-5% to-black"></div> */}
                         </div>
                         {/* <!-- More link --> */}
-                        <a class="flex-shrink-0 flex items-center justify-center text-indigo-600 w-10 h-10 rounded-full bg-gradient-to-b from-indigo-50 to-indigo-100 hover:from-white hover:to-indigo-50 focus:outline-none focus-visible:from-white focus-visible:to-white transition duration-150 ml-2" href="#0">
-                          {/* <span class="block font-bold"><span class="sr-only">Read more</span></span> */}
-                        <svg class="h-8 w-8 text-cyan-500"  viewBox="0 0 24 24"  fill="none"  stroke="currentColor"  stroke-width="2"  stroke-linecap="round"  stroke-linejoin="round">  <path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3" /></svg>
-                        </a>
+                        {/* <a class="flex-shrink-0 flex items-center justify-center text-indigo-600 w-10 h-10 rounded-full bg-gradient-to-b from-indigo-50 to-indigo-100 hover:from-white hover:to-indigo-50 focus:outline-none focus-visible:from-white focus-visible:to-white transition duration-150 ml-2" href="#0">
+                          <span class="block font-bold"><span class="sr-only">Read more</span></span>
+                        </a> */}
+                        <div class="flex-shrink-0 flex has-tooltip items-center justify-center w-10 h-10 ml-2">
+                          <span class="tooltip rounded shadow-lg p-1 text-gray-100 bg-[#1e7a9b] ml-32 capitalize">{docs.label}</span>
+                          
+                          {docs.label === 'positive' ? 
+                          <svg class="h-8 w-8 text-white fill-cyan-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3" /></svg>
+                          :<></>}
+                          {docs.label === 'negative' ?
+                          <svg class="h-8 w-8 text-white fill-red-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3zm7-13h2.67A2.31 2.31 0 0 1 22 4v7a2.31 2.31 0 0 1-2.33 2H17" /></svg>
+                          :<></>}
+                          {docs.label === 'neutral' ?
+                          <svg class="h-8 w-8 text-white fill-stone-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10" /><line x1="8" y1="12" x2="16" y2="12" /></svg>
+                          :<></>}
+                        </div>  
                       </div>
                       {/* Card body [End] */}
                     </div>
@@ -373,15 +521,18 @@ function App() {
           </section>
           {/* Game reviews [End] */}
         </div>
-        <div id="right" class="w-56 text-transparent">
-            padding
-        </div>
+        <div id="right" class="w-56"></div>
       </div>
       
       </> 
       ) : (<></>)}
+    
+    <button id="scrollButton" class={"fixed bottom-6 right-6 rounded-full " + (showScroll ? '': 'hidden')} onClick={scrollToTop}>
+      <svg class="h-10 w-10 text-white"  fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18"/>
+      </svg>
+    </button>
     </div>
-   
   );
 }
 
