@@ -347,87 +347,89 @@ function App() {
       {loading ? (<div class="text-white text-lg mt-5">Loading Results...</div>):<></>}
       {show ? ( <>
 
-      <div id="content" class="flex flex-row justify-between w-full">
-            
-        <div id="left" class="z-10 w-56 mt-10 h-fit p-3 bg-white rounded-lg shadow dark:bg-gray-700 ">
-          <h6 class="mb-3 text-sm font-medium text-gray-900 dark:text-white border-b-2 border-gray-200 border-opacity-90">
-            Filter
-          </h6>
-          <ul id="label-filter"class="space-y-2 text-sm mb-4" >
-            <p>Label</p>
-            <li class="flex items-center"> {/*onChange={() => setFilterPositive(!filterpositive)}*/}
-              <input id="positive" type="checkbox" value="positive" onClick={() => toggleFilter()} defaultChecked={false}
-                class="w-4 h-4 bg-gray-100 border-gray-300 rounded text-primary-600 focus:ring-primary-500 dark:focus:ring-primary-600 dark:ring-offset-gray-700 focus:ring-2 dark:bg-gray-600 dark:border-gray-500" />
-
-              <label for="positive" class="ml-2 text-sm font-medium text-gray-900 dark:text-gray-100">
-                Positive ({positivelabel})
-              </label>
-            </li>
-
-            <li class="flex items-center"> {/* onChange={() => setFilterNegative(!filternegative)} */}
-              <input id="negative" type="checkbox" value="negative" onClick={() => toggleFilter()} defaultChecked={false}
-                class="w-4 h-4 bg-gray-100 border-gray-300 rounded text-primary-600 focus:ring-primary-500 dark:focus:ring-primary-600 dark:ring-offset-gray-700 focus:ring-2 dark:bg-gray-600 dark:border-gray-500" />
-
-              <label for="negative" class="ml-2 text-sm font-medium text-gray-900 dark:text-gray-100">
-                Negative ({negativelabel})
-              </label>
-            </li>
-
-            <li class="flex items-center"> {/*onChange={() => setFilterNeutral(!filterneutral)} */}
-              <input id="neutral" type="checkbox" value="neutral" onClick={() => toggleFilter()} defaultChecked={false}
-                class="w-4 h-4 bg-gray-100 border-gray-300 rounded text-primary-600 focus:ring-primary-500 dark:focus:ring-primary-600 dark:ring-offset-gray-700 focus:ring-2 dark:bg-gray-600 dark:border-gray-500" />
-
-              <label for="neutral" class="ml-2 text-sm font-medium text-gray-900 dark:text-gray-100">
-                Neutral ({neutrallabel})
-              </label>
-            </li>
-          </ul>
-          <ul class="space-y-2 text-sm">
-            <span>{'Playtime (hours)'}</span>
-            <li class="flex items-center">
-                <input id="0to1" type="checkbox" value="0to1" onClick={() => toggleFilter()} defaultChecked={false}
+      <div id="content" class="flex flex-row justify-center w-full">
+        <div class="w-56 justify-end">
+          <div id="left" class="z-10 w-56 mt-10 h-fit p-3 bg-white rounded-lg shadow dark:bg-gray-700 ">
+            <h6 class="mb-3 text-sm font-medium text-gray-900 dark:text-white border-b-2 border-gray-200 border-opacity-90">
+              Filter
+            </h6>
+            <ul id="label-filter"class="space-y-2 text-sm mb-4" >
+              <p>Label</p>
+              <li class="flex items-center"> {/*onChange={() => setFilterPositive(!filterpositive)}*/}
+                <input id="positive" type="checkbox" value="positive" onClick={() => toggleFilter()} defaultChecked={false}
                   class="w-4 h-4 bg-gray-100 border-gray-300 rounded text-primary-600 focus:ring-primary-500 dark:focus:ring-primary-600 dark:ring-offset-gray-700 focus:ring-2 dark:bg-gray-600 dark:border-gray-500" />
 
-                <label for="0to1" class="ml-2 text-sm font-medium text-gray-900 dark:text-gray-100">
-                  0 - 100,000 ({zeroRange})
+                <label for="positive" class="ml-2 text-sm font-medium text-gray-900 dark:text-gray-100">
+                  Positive ({positivelabel})
                 </label>
               </li>
-            <li class="flex items-center">
-                <input id="1to2" type="checkbox" value="1to2" onClick={() => toggleFilter()} defaultChecked={false}
+
+              <li class="flex items-center"> {/* onChange={() => setFilterNegative(!filternegative)} */}
+                <input id="negative" type="checkbox" value="negative" onClick={() => toggleFilter()} defaultChecked={false}
                   class="w-4 h-4 bg-gray-100 border-gray-300 rounded text-primary-600 focus:ring-primary-500 dark:focus:ring-primary-600 dark:ring-offset-gray-700 focus:ring-2 dark:bg-gray-600 dark:border-gray-500" />
 
-                <label for="1to2" class="ml-2 text-sm font-medium text-gray-900 dark:text-gray-100">
-                  100,000 - 200,000 ({oneRange})
+                <label for="negative" class="ml-2 text-sm font-medium text-gray-900 dark:text-gray-100">
+                  Negative ({negativelabel})
                 </label>
               </li>
-            <li class="flex items-center">
-                <input id="2to3" type="checkbox" value="2to3" onClick={() => toggleFilter()} defaultChecked={false}
+
+              <li class="flex items-center"> {/*onChange={() => setFilterNeutral(!filterneutral)} */}
+                <input id="neutral" type="checkbox" value="neutral" onClick={() => toggleFilter()} defaultChecked={false}
                   class="w-4 h-4 bg-gray-100 border-gray-300 rounded text-primary-600 focus:ring-primary-500 dark:focus:ring-primary-600 dark:ring-offset-gray-700 focus:ring-2 dark:bg-gray-600 dark:border-gray-500" />
 
-                <label for="2to3" class="ml-2 text-sm font-medium text-gray-900 dark:text-gray-100">
-                  200,000 - 300,000 ({twoRange})
+                <label for="neutral" class="ml-2 text-sm font-medium text-gray-900 dark:text-gray-100">
+                  Neutral ({neutrallabel})
                 </label>
               </li>
-            <li class="flex items-center">
-                <input id="3to4" type="checkbox" value="3to4" onClick={() => toggleFilter()} defaultChecked={false}
-                  class="w-4 h-4 bg-gray-100 border-gray-300 rounded text-primary-600 focus:ring-primary-500 dark:focus:ring-primary-600 dark:ring-offset-gray-700 focus:ring-2 dark:bg-gray-600 dark:border-gray-500" />
+            </ul>
+            <ul class="space-y-2 text-sm">
+              <span>{'Playtime (hours)'}</span>
+              <li class="flex items-center">
+                  <input id="0to1" type="checkbox" value="0to1" onClick={() => toggleFilter()} defaultChecked={false}
+                    class="w-4 h-4 bg-gray-100 border-gray-300 rounded text-primary-600 focus:ring-primary-500 dark:focus:ring-primary-600 dark:ring-offset-gray-700 focus:ring-2 dark:bg-gray-600 dark:border-gray-500" />
 
-                <label for="3to4" class="ml-2 text-sm font-medium text-gray-900 dark:text-gray-100">
-                  300,000 - 400,000 ({threeRange})
-                </label>
-              </li>
-            <li class="flex items-center">
-                <input id="4to5" type="checkbox" value="4to5" onClick={() => toggleFilter()} defaultChecked={false}
-                  class="w-4 h-4 bg-gray-100 border-gray-300 rounded text-primary-600 focus:ring-primary-500 dark:focus:ring-primary-600 dark:ring-offset-gray-700 focus:ring-2 dark:bg-gray-600 dark:border-gray-500" />
+                  <label for="0to1" class="ml-2 text-sm font-medium text-gray-900 dark:text-gray-100">
+                    0 - 100,000 ({zeroRange})
+                  </label>
+                </li>
+              <li class="flex items-center">
+                  <input id="1to2" type="checkbox" value="1to2" onClick={() => toggleFilter()} defaultChecked={false}
+                    class="w-4 h-4 bg-gray-100 border-gray-300 rounded text-primary-600 focus:ring-primary-500 dark:focus:ring-primary-600 dark:ring-offset-gray-700 focus:ring-2 dark:bg-gray-600 dark:border-gray-500" />
 
-                <label for="4to5" class="ml-2 text-sm font-medium text-gray-900 dark:text-gray-100">
-                  400,000 - 500,000 ({fourRange})
-                </label>
-              </li>
-          </ul>
+                  <label for="1to2" class="ml-2 text-sm font-medium text-gray-900 dark:text-gray-100">
+                    100,000 - 200,000 ({oneRange})
+                  </label>
+                </li>
+              <li class="flex items-center">
+                  <input id="2to3" type="checkbox" value="2to3" onClick={() => toggleFilter()} defaultChecked={false}
+                    class="w-4 h-4 bg-gray-100 border-gray-300 rounded text-primary-600 focus:ring-primary-500 dark:focus:ring-primary-600 dark:ring-offset-gray-700 focus:ring-2 dark:bg-gray-600 dark:border-gray-500" />
+
+                  <label for="2to3" class="ml-2 text-sm font-medium text-gray-900 dark:text-gray-100">
+                    200,000 - 300,000 ({twoRange})
+                  </label>
+                </li>
+              <li class="flex items-center">
+                  <input id="3to4" type="checkbox" value="3to4" onClick={() => toggleFilter()} defaultChecked={false}
+                    class="w-4 h-4 bg-gray-100 border-gray-300 rounded text-primary-600 focus:ring-primary-500 dark:focus:ring-primary-600 dark:ring-offset-gray-700 focus:ring-2 dark:bg-gray-600 dark:border-gray-500" />
+
+                  <label for="3to4" class="ml-2 text-sm font-medium text-gray-900 dark:text-gray-100">
+                    300,000 - 400,000 ({threeRange})
+                  </label>
+                </li>
+              <li class="flex items-center">
+                  <input id="4to5" type="checkbox" value="4to5" onClick={() => toggleFilter()} defaultChecked={false}
+                    class="w-4 h-4 bg-gray-100 border-gray-300 rounded text-primary-600 focus:ring-primary-500 dark:focus:ring-primary-600 dark:ring-offset-gray-700 focus:ring-2 dark:bg-gray-600 dark:border-gray-500" />
+
+                  <label for="4to5" class="ml-2 text-sm font-medium text-gray-900 dark:text-gray-100">
+                    400,000 - 500,000 ({fourRange})
+                  </label>
+                </li>
+            </ul>
+          </div>
         </div>
+        
 
-        <div id="middle" class="flex flex-col">
+        <div id="middle" class="flex flex-col px-16">
           <div>
               {/* Game Info [Start] */}
               {gameInfo?.map((game) => { //Display queried game box art and title
