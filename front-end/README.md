@@ -1,8 +1,5 @@
 # Information Retrieval Assignment (Query UI)
 
-## Clone and navigate 
-Clone this repo by either running `git clone https://github.com/eugene-swj/ir_query.git` or by using Github Desktop.
-
 ## Installing Dependencies
 In the project directory, run these following commands:
 ###  `npm i`
