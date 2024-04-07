@@ -429,7 +429,7 @@ function App() {
         </div>
         
 
-        <div id="middle" class="flex flex-col px-16">
+        <div id="middle" class="flex flex-col px-16 w-[48rem] ">
           <div>
               {/* Game Info [Start] */}
               {gameInfo?.map((game) => { //Display queried game box art and title
@@ -458,7 +458,7 @@ function App() {
             <div class="">
             {result?.map((docs) => {
               return (
-              <div key={docs.id} class={docs.username === '' ? "hidden":" max-w-2xl min-h-56 mx-auto bg-gradient-to-r from-[#1e7a9b] to-[#323d54] shadow-lg rounded-lg mb-5"}>
+              <div key={docs.id} class={docs.username === '' ? "hidden":" min-h-56 mx-auto bg-gradient-to-r from-[#1e7a9b] to-[#323d54] shadow-lg rounded-lg mb-5"}>
                 <div class="px-6 py-5">
                   <div class="flex items-start">
                     {/* Card content [Start] */}
