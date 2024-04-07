@@ -1,0 +1,10 @@
+CompileCommand: exclude com/github/benmanes/caffeine/cache/BoundedLocalCache.put bool exclude = true
+ERROR StatusConsoleListener Unable to delete file c:\SOLR\solr-9.5.0\example\cloud\node1\solr\..\logs\solr.log: java.nio.file.FileSystemException c:\SOLR\solr-9.5.0\example\cloud\node1\solr\..\logs\solr.log: The process cannot access the file because it is being used by another process
+2024-03-26 07:25:10.031 INFO  (main) [c: s: r: x: t:] o.e.j.s.Server jetty-10.0.19; built: 2023-12-15T20:38:32.477Z; git: 8492d1c78f122bb30cce20aecfa07e7283facd47; jvm 22+36-2370
+2024-03-26 07:25:12.443 WARN  (main) [c: s: r: x: t:] o.e.j.u.DeprecationWarning Using @Deprecated Class org.eclipse.jetty.servlet.listener.ELContextCleaner
+2024-03-26 07:25:12.605 INFO  (main) [c: s: r: x: t:] o.a.s.s.CoreContainerProvider Using logger factory org.apache.logging.slf4j.Log4jLoggerFactory
+2024-03-26 07:25:12.655 INFO  (main) [c: s: r: x: t:] o.a.s.s.CoreContainerProvider  ___      _       Welcome to Apache Solr™ version 9.5.0
+2024-03-26 07:25:12.656 INFO  (main) [c: s: r: x: t:] o.a.s.s.CoreContainerProvider / __| ___| |_ _   Starting in cloud mode on port 8984
+2024-03-26 07:25:12.656 INFO  (main) [c: s: r: x: t:] o.a.s.s.CoreContainerProvider \__ \/ _ \ | '_|  Install dir: c:\SOLR\solr-9.5.0
+2024-03-26 07:25:12.656 INFO  (main) [c: s: r: x: t:] o.a.s.s.CoreContainerProvider |___/\___/_|_|    Start time: 2024-03-26T07:25:12.656765500Z
+2024-03-26 07:25:12.669 INFO  (main) [c: s: r: x: t:] o.a.s.s.CoreContainerProvider Solr started with "-XX:+CrashOnOutOfMemoryError" that will crash on any OutOfMemoryError exception. The cause of the OOME will be logged in the crash file at the following path: c:\SOLR\solr-9.5.0\example\cloud\node1\solr\..\logs\jvm_crash_10616.log
