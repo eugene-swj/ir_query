@@ -21,3 +21,4 @@ Clone this repo by either running `git clone https://github.com/eugene-swj/ir_qu
 1. Navigate to the folder (front-end/) using command prompt.
 2. Run `npm i` to install dependencies.
 3. After installing dependencies, run `npm start` to start the React App.
+4. Open your browser and enter `http://localhost:3000` to view the web app.
